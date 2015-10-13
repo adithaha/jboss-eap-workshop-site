@@ -64,9 +64,9 @@ Jika anda menggunakan dua mesin yang berbeda, lakukan instalasi di kedua mesin. 
     
     Cari konfigurasi __jgroups__ seperti dibawah ini. Default adalah menggunakan UDP atau multicast, tidak perlu ada konfigurasi setiap host. Di sini kita akan mencoba menggunakan TCP atau unicast, dan konfigurasi tiap host diperlukan.
 
-Bisa kita lihat konfigurasi JGroups dibawah ini. Konfigurasi ini sudah sedikir dimodifikasi, versi aslinya anda tidak akan menemukan blok element `<stack name="tcp">`. Blok elemen ini digunakan jika komunikasi antar server dan dari server ke load balancer tidak bisa menggunakan multicast (UDP). Untuk menggunakan protokol TCP pada komunikasi cluster kita perlu mengubah nilai dari attribute `default-stack` pada element `subsystem` dibawah ini menjadi __`tcp`__
+    Bisa kita lihat konfigurasi JGroups dibawah ini. Konfigurasi ini sudah sedikir dimodifikasi, versi aslinya anda tidak akan menemukan blok element `<stack name="tcp">`. Blok elemen ini digunakan jika komunikasi antar server dan dari server ke load balancer tidak bisa menggunakan multicast (UDP). Untuk menggunakan protokol TCP pada komunikasi cluster kita perlu mengubah nilai dari attribute `default-stack` pada element `subsystem` dibawah ini menjadi __`tcp`__
 
-```xml
+	```xml
         <subsystem xmlns="urn:jboss:domain:jgroups:1.1" default-stack="tcp">
             <stack name="udp">
                 <transport type="UDP" socket-binding="jgroups-udp"/>
@@ -109,11 +109,11 @@ Bisa kita lihat konfigurasi JGroups dibawah ini. Konfigurasi ini sudah sedikir d
                 <protocol type="RSVP"/>
             </stack>
         </subsystem>
-```
+	```
 
-Jika anda menggunakan protocol TCP dan menggunakan mesin yang berbeda, ganti nilai element `property` dengan name `initial_host` sesuai IP address dari masing-masing mesin, misalnya `192.168.0.12[7600],192.168.0.13[7600]`.
+    Jika anda menggunakan protocol TCP dan menggunakan mesin yang berbeda, ganti nilai element `property` dengan name `initial_host` sesuai IP address dari masing-masing mesin, misalnya `192.168.0.12[7600],192.168.0.13[7600]`.
 
-Nilai 7600 adalah port dari __jgroups-tcp__ yang dispesifikasikan pada element `socket-binding-group`
+    Nilai 7600 adalah port dari __jgroups-tcp__ yang dispesifikasikan pada element `socket-binding-group`
 
 	
 4.  create file untuk menjalankan server di direktori D:/server/jboss/eap/server-standalone-ha/serverX/run.bat
@@ -126,7 +126,7 @@ Nilai 7600 adalah port dari __jgroups-tcp__ yang dispesifikasikan pada element `
     ../../jboss-eap-6.4/bin/standalone.sh -b 0.0.0.0 -c standalone-ha.xml -Djboss.server.base.dir=standalone-server2/standalone -Djboss.node.name=server2 -Djboss.socket.binding.port-offset=100
     ```
     
-Berikut penjelasan mengenai opsi yang digunakan pada perintah diatas
+    Berikut penjelasan mengenai opsi yang digunakan pada perintah diatas
  
 
 	* `-b` : Binding address. 0.0.0.0 artinya port akan di-binding kesemua network interface/IP address yang dimilimi mesin tersebut.
@@ -281,7 +281,7 @@ Kita akan test HA Cluster dengan beberapa scenario:
    
 4. Test aplikasi dengan cara mengakses URL load-balancer yaitu 
    
-   [http://localhost/cluster-test](http://localhost/cluster-test)
+   [http://localhost:6666/cluster-test](http://localhost:6666/cluster-test)
    
    Perhatikan lagi "nodeId" dan jumlah session.
    
