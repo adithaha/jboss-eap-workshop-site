@@ -74,28 +74,7 @@ download file driver JDBC4.
 	
    Karakter pertama pada file tersebut tidak boleh spasi atau karakter lainnya tapi harus dimulai dengan `<?xml`
 
-   Selesai kita membuat module untuk JDBC driver.
-
-## Buat Konfigurasi Datasource
-
-3. Sekarang kita buat konfigurasi datasource dengan cara manual. Asumsi anda akan menjalankan Jboss EAP dalam mode standalone, maka ubah file konfigurasi EAP yang digunakan (`standalone.xml`). 
-   
-    Pada elemen `datasources` ubah konfigurasi datasource dengan `pool-name` ExampleDS menjadi seperti berikut:
-
-	```xml
-	<datasource jndi-name="java:jboss/datasources/ExampleDS" pool-name="ExampleDS" enabled="true" 
-	            use-java-context="true" spy="true">
-	    <connection-url>jdbc:postgresql://localhost:5432/bpms</connection-url>
-	    <driver-class>org.postgresql.Driver</driver-class>
-	    <driver>postgresql</driver>
-	    <security>
-	        <user-name>postgres</user-name>
-	        <password>password</password>
-	    </security>
-	</datasource> 
-	```
-
-    Tambahkan elemen dibawahnya
+3.  Buka standalone.xml, Tambahkan elemen dibawahnya
 
 	```xml
 	<drivers>
@@ -105,18 +84,24 @@ download file driver JDBC4.
 	    ...
 	</drivers>
 	```
+   Selesai kita membuat module untuk JDBC driver.
 
-    Selain cara manual diatas, kita juga bisa membuat datasource dari Web Management Console, dari menu 
-    Configuration > Connection > Datasource.
+## Buat Konfigurasi Datasource
 
-4. Start atau restart JBoss EAP 
-   
-    Jika JBoss EAP belum dijalankan, maka anda bisa menjalankannya dengan perintah `standalone.sh` (Linux)
-    dari direktori `<EAP_INSTALL_DIR>/bin/`
-    
-5.  buka web console di http://localhost:9990/
-
-6.  Eksplorasi fields yang bisa diatur untuk sebuah datasource.
+1.  buka web console di http://localhost:9990/
+2.  Pilih tab configuration
+3.  Klik Connector -> datasources
+4.  Klik Add
+    name: jbossDS
+    JNDI Name: java:jboss/datasources/jbossDS
+    Klik Next
+5.  Pilih postgresql
+6.  Isi field berikut:
+    Connection URL: jdbc:postgresql://localhost:5432/db
+    Username: postgres
+    Password: postgres
+7.  Datasource telah dibuat, namun tidak terkoneksi dengan database, karena kita tidak mensetup database
+8.  Eksplorasi fields yang bisa diatur untuk sebuah datasource.
    
     Klik tab Attributes, Connection, Pool, Validation dan Timeouts.
     
