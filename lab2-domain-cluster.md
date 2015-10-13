@@ -21,9 +21,9 @@ Berikut gambar arsitektur dari apa yang akan kita setup:
                                   +------->| JBoss EAP |      .
                                   |        | (server2) |      .    +---------------------+
                                   |        +-----------+      .    |      JBoss EAP      |
-             +-----------------+  |          Mesin-A          .....| (Domain Controller) |
+             +-----------------+  |          machine-2        .....| (Domain Controller) |
  Client  --->| JBoss Web Server|--+                           .    +---------------------+
-(browser)    | (loadbalancer)  |  |                           .          Mesin-X
+(browser)    | (loadbalancer)  |  |                           .          machine-1
              +-----------------+  |        +-----------+      .
                   Mesin-Z         +------->| JBoss EAP |      .
                                   |        | (server3) |      .
@@ -32,14 +32,11 @@ Berikut gambar arsitektur dari apa yang akan kita setup:
                                   '------->| JBoss EAP |
                                            | (server4) |
                                            +-----------+
-                                             Mesin-B
+                                             machine-3
 
 
 ```
 Pada Mesin-A dan Mesin-B akan dijalankan masing-masing 2 server instance JBoss EAP untuk memperlihatkan kemampuan vertical scalability. Dan semua server JBoss EAP tersebut merupakan satu kesatuan (group atau cluster) sehingga memperlihatkan kemampuan horizontal scalability.
-
->> Artikel ini tidak bermaksud untuk menjelaskan mengapa kita membuat arsitektur seperti itu.
->> Diharapkan anda sudah tahu konsep vertical & horizontal scalability.
 
 Langkah-langkah besar untuk mensetup lingkungan (environment) seperti tergambar diatas yang akan kita jalankan sebagai berikut:
 
@@ -50,16 +47,6 @@ Langkah-langkah besar untuk mensetup lingkungan (environment) seperti tergambar 
   5. Test akses aplikasi 
   6. Setup Load Balancer/Web Server di Mesin-Z
   7. Test akses applikasi
-
-Kebutuhan Sebelum Memulai LAB
------------------------------
-
-Sebelum melanjutkan untuk praktek mengikuti dokumen LAB ini, beberapa kebutuhan yang perlu disiapkan adalah sebagai berikut
-
-- OS yang digunakanan adalah Linux, anda tidak perlu menggunakan user root
-- Pada OS sudah terinstal JDK atau JRE minimal versi 1.6
-- JBoss EAP versi 6.X sudah terinstal dan anda sudah tau cara menjalankan atau memberhentikan EAP server instance.
-
 
 
 LAB: Menjalankan Domain dengan topology default
@@ -87,7 +74,7 @@ File-file konfigurasi untuk setup domain ada di direktori `domain` didalam direk
 	```
 
  - File-file dengan extension `.properties` adalah file yang menyimpan informasi credential (username, group, dan password). 
- - File `domain.xml` adalah file konfigurasi domain yang mendefiniskan module-module yang digunakan pada domain dan **mendefinisikan server-group atau cluster**
+ - File `domain.xml` adalah file konfigurasi domain yang mendefinisikan module-module yang digunakan pada domain dan **mendefinisikan server-group atau cluster**
  - File `host-master.xml` adalah contoh file konfigurasi untuk sebuah mesin yang kita set sebagai Domain Controller, yaitu node yang menjadi sentral pengaturan dan tidak menjalankan server yang bekerja menerima request dari pengguna aplikasi 
  - File `host-slave.xml` adalah contoh file konfigurasi untuk sebuah mesin yang kita set sebagai application server yang akan kita deploy aplikasi dan bekerja menerima request dari pengguna aplikasi.
  - File `host.xml` adalah contoh file konfigurasi untuk sebuah mesin yang akan kita set sebagai Domain Controller tapi juga akan menjalankan application server yang akan menjalankan aplikasi.
@@ -137,7 +124,7 @@ Sekarang ikuti langkah-langkah berikut untuk menjalankan JBoss EAP dengan arsite
     
    Perintah tersebut akan membaca file konfigurasi `domain.xml` dan `host.xml` di folder `domain`
    
-2. Akses admin cosole: [http://127.0.0.1:10190/](http://127.0.0.1:10190/)
+2. Akses admin cosnole: [http://127.0.0.1:10190/](http://127.0.0.1:10190/)
 
 3.  Lalu klik menu "Domain" > "Overview" atau akses langsung ke URL: 
     [http://127.0.0.1:10190/console/App.html#server-groups](http://127.0.0.1:10190/console/App.html#topology)
@@ -223,14 +210,14 @@ Sekarang mari kita mulai untuk membuat konfigurasi sesuai dengan contoh kasus ya
 
 Kita akan mensimulasikan sebuah Domain Controller yang dijalankan di Mesin-X. Pada mesin ini tidak ada server EAP yang akan menjalankan aplikasi, hanya sebuah proses Domain Controller yang akan menjadi node untuk management dimana Management Console dijalankan. 
 
-Langkah berikut menggunakan asumsi JBoss EAP anda diinstal di direktori `/home/jbos-eap/`
+Langkah berikut menggunakan asumsi JBoss EAP anda diinstal di direktori `D:/server/jboss/eap/jboss-eap-6.4`
 
-1.  Copy direktori `domain` menjadi `domain-controller` pada direktori yang sama yaitu di `/home/jboss-eap`
-    ```
-    cd /home/jboss-eap
-    cp domain domain-controller
-    ```
-2.  Buka file `domain.xml` di direktori `domain-controller/configuration/` dengan file editor. Di file ini kita akan melihat ada beberapa konfigurasi subsystem untuk masing-masing **profile** 
+1.  Buat direktori `server-domain` di `D:/server/jboss/eap/`
+2.  Buat direktori `machine-1` di `D:/server/jboss/eap/server-domain`, machine-1 akan digunakan untuk domain controller
+3.  Buat direktori `machine-2` di `D:/server/jboss/eap/server-domain`, machine-2 akan digunakan untuk node server
+4.  Buat direktori `machine-3` di `D:/server/jboss/eap/server-domain`, machine-3 akan digunakan untuk node server
+5.  Copy direktori `D:/server/jboss/eap/jboss-eap-6.4/domain` ke `machine-1`, `machine-2` dan `machine-3`
+6.  Buka file `domain.xml` di direktori `machine-1/domain/configuration/` dengan file editor. Di file ini kita akan melihat ada beberapa konfigurasi subsystem untuk masing-masing **profile** 
 
 	```
 	<profiles>
@@ -254,30 +241,26 @@ Langkah berikut menggunakan asumsi JBoss EAP anda diinstal di direktori `/home/j
 	```
 	<hornetq-server>
 		<clustered>true</clustered>
-        <cluster-user>jms-user</cluster-user>
-        <cluster-password>simple-pass</cluster-password>
+	        <cluster-user>jms-user</cluster-user>
+	        <cluster-password>simple-pass</cluster-password>
 		...
 	</hornetq-server>
 	```
 	
-3.  Anda bisa hapus semua file di direktori `domain-controller/configuration/` dengan ekstensi `.xml` kecuali file `domain.xml` dan file `host-master.xml`
-    
-4.  Jalankan Domain Controller atau master host dengan perintah berikut:
+7.  create file untuk menjalankan server di direktori D:/server/jboss/eap/server-domain/server1/run.bat 
+    ```
+    ../../jboss-eap-6.4/bin/domain.sh -c domain.xml --host-config=host-master.xml -Djboss.domain.base.dir=domain -Djboss.node.name=server1 -Djboss.socket.binding.port-offset=0
+    ```
+
+8.  Jalankan Domain Controller atau master host dengan perintah berikut:
 
     ```
-    ./bin/domain.sh -c domain.xml --host-config=host-master.xml -Djboss.domain.base.dir=domain-controller
+    run.bat
     ```
-    
-    Ada harus berada di direktori dimana JBoss EAP diinstall, yaitu di `/home/jboss-eap`.
-    Jika anda berada di `/home/jboss-eap/bin` maka perintah tersebut menjadi seperti ini:
-
-    ```
-    ./domain.sh -c domain.xml --host-config=host-master.xml -Djboss.domain.base.dir=../domain-controller
-    ```    
     
     Perintah tersebut akan menjalankan Process Controller dan Host Controller tanpa menjalankan satupun Server karena berbeda dengan file konfigurasi host default yaitu `host.xml`, file host yang digunakan pada perintah tersebut yaitu `host-master.xml` tidak memiliki element `<servers>...</servers>`
 
-5.  Buka file `host-master.xml` dengan editor atau file viewer, perhatikan disitu tidak ada elemen `<servers>...</servers>`
+9.  Buka file `host-master.xml` dengan editor atau file viewer, perhatikan disitu tidak ada elemen `<servers>...</servers>`
     Lihat juga bahwa file ini memiliki element
 
 	```
@@ -289,14 +272,14 @@ Langkah berikut menggunakan asumsi JBoss EAP anda diinstal di direktori `/home/j
 	
 	Perhatikan juga di file tersebut didefinisikan 2 server group yaitu `main-server-group` dan `other-server-group` dengan profile yang berbeda.
 
-6.  Eksplor proses Java yang ada pada sistem dengan perintah `ps ax |grep jboss`
+10.  Eksplor proses Java yang ada pada sistem dengan perintah `ps ax |grep jboss`
 	Anda akan mendapatkan 2 proses berikut
 	```
 	...java -D[Host Controller]...
 	...java -D[Process Controller]...
 	```
 
-7.  Eksplor web management console: [http://127.0.0.1:9990/](http://127.0.0.1:9990/)
+11.  Eksplor web management console: [http://127.0.0.1:9990/](http://127.0.0.1:9990/)
     [EAP v6.4] Klik menu Domain > Overview dan lihat pada tab TOPOLOGY, perhatikan tidak ada server atau server group yang terlihat di halaman tersebut.
 
     Lihat juga pada Domain > Server Groups, ada dua server groups di halaman tersebut seperti yang terlihat di `domain.xml`
@@ -313,120 +296,58 @@ Langkah berikut menggunakan asumsi JBoss EAP anda diinstal di direktori `/home/j
     
     Nilai `${jboss.management.native.port:9999}` artinya port yang digunakan (default) adalah 9999 jika tidak dioveride dengan cara dispesifikasikan pada command line dengan opsi `-Djboss.management.native.port=XXXX` dimana XXXX adalah nilai yang akan menggantikan nilai 9999
 
-8.  SELESAI. Kita sudah menyipkan sebuah Domain Controller pada Mesin-X.
+12.  SELESAI. Kita sudah menyiapkan sebuah Domain Controller pada server1.
 
-*  Nantinya semua EAP server yang ada di Mesin-A dan Mesin-B akan mengakses (tergabung ke) Domain Controller di Mesin-X ini melalui port 9990 yaitu port yang didefinisikan sebagai __native management port__
+
+*  Nantinya semua EAP server yang ada di machine-2 dan machine-3 akan mengakses (tergabung ke) Domain Controller di machine-1 ini melalui port 9990 yaitu port yang didefinisikan sebagai __native management port__
 
 	```
 	<native-interface security-realm="ManagementRealm">
-        <socket interface="management" port="${jboss.management.native.port:9999}"/>
-    </native-interface>
-    ```
-* Setiap host yang menajalankan EAP server melakukan otentikasi ke Domain Controller saat join, oleh karena itu kita perlu membuat user untuk tiap host. Gunakan perintah `add-user.sh` untuk menambahkan user dengan realm "ManagementRealm" dan group "admin"
+        	<socket interface="management" port="${jboss.management.native.port:9999}"/>
+    	</native-interface>
+	 ```
 
-	1.  Untuk Mesin-A kita buat username `machinea` denagan password `Passw0rd!` dengan perintah `add-user.sh`
-	    Pada akhir perintah tersebut, akan ditampilkan output seperti ini:
-
-		```
-		To represent the user add the following to the server-identities definition <secret value="UGFzc3cwcmQh" />
-		```
-		
-		Copy secret value tersebut dan simpan karena akan kita gunakan saat mengatur (setup) Mesin-A nanti
-		
-	2. Untuk Mesin-B kita buat username `machineb` denagan password `Passw0rd!` dengan perintah `add-user.sh`
-	   Pada akhir perintah tersebut, akan ditampilkan juga output seperti diatas, jika passwordnya sama nilai secret value akan sama. Copy secret value tersebut dan simpan karena akan kita gunakan saat mengatur (setup) Mesin-B nanti
-
-* PENTING: Pada kondisi nyata, interface (IP address) yang di-bind untuk management haruslah menggunakan IP address yang sesungguhnya, bukan 127.0.0.1 seperti yang dispesifikasikan pada `host-master.xml` diatas. Untuk mudahnya anda bisa set agar binding dilakukan kesemua IP address yang dimiliki host yaitu dengan menggunakan IP address `0.0.0.0` seperti dibawah ini:
-
-	```
-	<interfaces>
-        <interface name="management">
-            <inet-address value="${jboss.bind.address.management:0.0.0.0}"/>
-        </interface>
-    </interfaces>
-	```
 
 ## Meyiapkan JBoss EAP Server (SLAVE)
 
-Kita akan mensimulasikan penyiapan JBoss EAP Server di 2 mesin yaitu Mesin-A dan Mesin-B yang berbeda dengan mesin dimana dijalankan Domain Controller.
+Kita akan mensimulasikan penyiapan JBoss EAP Server di 2 mesin yaitu machine-2 dan machine-3 yang berbeda dengan mesin dimana dijalankan Domain Controller.
 
-Tentu di 2 mesin tersebut kita instal dahulu JBoss EAP kemudian kita ikuti langkah berikut. Pada simulasi ini kita akan menggunakan program JBoss EAP yang sama hanya saja menggunakan konfigurasi yang terpisah.
 
-1.  Copy direktori `domain` ke direktori baru dengan nama `domain-machine-a`
- 
-    ```
-    cd /home/jboss-eap 
-    cp domain domain-machine-a
-    ```
-
-2.  Hapus atau ganti nama file `domain.xml` menjadi `domain.xml.backup`, agar file ini tidak dibaca saat JBoss EAP dijalankan. File tersebut tidak diperlukan pada mesin yang bertindak sebagai Slave.
-
-	Semua file `.xml` di direktori `domain-machine-a` dapat dihapus kecuali `host-slave.xml`. Server EAP yang akan jalan di Mesin-A ini akan menggunakan konfigurasi subsystem sesuai dengan konfigurasi profile yang ada di Cluster Domain yang di simpan di file `domain.xml`
-
-3.  Edit file `host-slave.xml` yang ada di direktori `domain-machine-a`
-
-    Tambahkan attribute `name` di element paling awal yaitu element `host` dengan value identities dari mesin, __nilai ini harus sama dengan username yang sudah ada di Domain Controller__, di langkah sebelumnya kita sudah set username `machinea` di Domain Controller, jadi element pertama menjadi seperti ini:
+1.  Sebelumnya direktori machine-2 dan machine-3 sudah kita buat.
+2.  Edit file `host-slave.xml` yang ada di direktori `machine-2`
     
     ```
-      <host name="machinea" xmlns="urn:jboss:domain:1.6">
+      <host name="machine-2" xmlns="urn:jboss:domain:1.6">
     ``` 
-Lalu set secret value untuk authentication ke Domain Controller sesuai dengan nilai yang sudah kita simpan pada langkah sebelumnya:
-
-    ```
-    ...
-    <security-realm name="ManagementRealm">
-      <server-identities>
-         <secret value="UGFzc3cwcmQh"/>
-      </server-identities> 
-    ...
-    ```
 
     Pada file ini didefinisikan alamat IP atau hostname dan port dari host-master atau Domain Controller, anda bisa lihat seperti ini. 
    
     ```
-    <domain-controller>
-       <remote host="${jboss.domain.master.address:127.0.0.1}" 
-               port="${jboss.domain.master.port:9999}" 
-               security-realm="ManagementRealm"/>
-    </domain-controller>
+    <management-interfaces>
+            <native-interface security-realm="ManagementRealm">
+                <socket interface="management" port="${jboss.management.native.port:19999}"/>
+            </native-interface>
+        </management-interfaces>
     ```
-    Variabel `${jboss.domain.master.address}` dapat kita set disitu atau kita spesifikasikan dengan menggunakan command line argument, jika kita tulis seperti ini `${jboss.domain.master.address:192.168.0.1}` artinya jika kita tidak didefinisikan di command line argument parameter `jboss.domain.master.address` maka nilai defaultnya adalah `192.168.0.1`. Kita akan lihat nanti pada saat kita jalankan `domain.sh` kita spesifikasikan pada command line argument nilai ini.
     
-    Karena kita akan setup 2 JBoss EAP server di Mesin-A dengan nama `server-one` dan `server-two`, maka pastikan kita memdefinisikan kedua server tersebut seperti ini:
+    Ubah port management dari machine-2 menjadi 19999.
     
-    ```
-    <servers>
-        <server name="server-one" group="main-server-group">
-            <socket-bindings port-offset="200"/>
-        </server>
-        <server name="server-two" group="other-server-group">
-            <socket-bindings port-offset="300"/>
-        </server>
-    </servers>
-    ```
-    Kedua server teresebut harus menggunakan `port-offset` yang berbeda agar penggunaan port tidak bentrok. 
-
-4. Jalankan dengan perintah berikut
+3.  Ulangi langkah #2 untuk direktori `machine-3`, gunakan port management 29999.
+4.  create file untuk menjalankan server di direktori D:/server/jboss/eap/server-domain/machine-2/run.bat
 
     ```
-    ./bin/domain.sh --host-config=host-slave.xml -Djboss.domain.base.dir=domain-machine-1 -Djboss.domain.master.address=127.0.0.1
+    ../../jboss-eap-6.4/bin/domain.sh --host-config=host-slave.xml -Djboss.domain.base.dir=domain -Djboss.domain.master.address=localhost
     ```
     
-    Setelah dijalankan, anda akan lihat di console Mesin-X (Domain Controller) output seperti ini:
+    create file untuk menjalankan server di direktori D:/server/jboss/eap/server-domain/machine-3/run.bat
     
+     ```
+    ../../jboss-eap-6.4/bin/domain.sh --host-config=host-slave.xml -Djboss.domain.base.dir=domain -Djboss.domain.master.address=localhost
     ```
-    [Host Controller] 00:53:56,976 INFO  [org.jboss.as.domain] (Host Controller Service Threads - 30) JBAS010918: Registered remote slave host "machine-a", JBoss EAP 6.3.0.GA (AS 7.4.0.Final-redhat-19)
-    ```
-
-	Yang menunjukan bahwa host machine-a sudah sukses bergabung (join) dengan Domain Controller
     
     >> Pada kondisi nyata dimana Domain Controler atau master-host berbeda mesin dengan mesin anggota cluster maka nilai 127.0.0.1 harus diubah dengan IP address dari master-host.
 
-5.  Lakukan langkah 1 sampai 4 sekali lagi, kali ini untuk Mesin-B dengan nama direktori `domain-machine-b` dan nama host `machineb`. Gunakan nama server yang berbeda yaitu `server-three` dan `server-four` dan juga gunakan port-offset yang berbeda misalnya 200 dan 300 karena anda akan menjalankan server tersebut di mesin laptop/PC yang sama, jadi nomor port jangan sampai bentrok.
 
-6.  Setup hingga hasil akhirnya dipatkan konfigurasi seperti ini:
-
-    ![image](https://cloud.githubusercontent.com/assets/3068071/7278432/a9b4d24c-e93f-11e4-8885-49df34292da4.png)
    
 7.  Tes dengan men-deploy aplikasi `cluster-test.war`. Buka management console, klik menu "Deployment", klik tombol "Add" dan klik "Browse" untuk memilih file `cluster-test.war`. Klik Next kemudian Save. 
 
