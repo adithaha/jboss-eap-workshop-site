@@ -7,7 +7,7 @@ Buka Terminal (Linux) atau Command Line (Windows) kemudian jalankan perintah
    	java -version
    	```
    
-   	Kemudian juga cek apakah variabel `JAVA_HOME` sudah diset di environment, jika belum set JAVA_HOME
+Kemudian juga cek apakah variabel `JAVA_HOME` sudah diset di environment, jika belum set JAVA_HOME
    
   	```
    	export JAVA_HOME=/path/to/jdk
