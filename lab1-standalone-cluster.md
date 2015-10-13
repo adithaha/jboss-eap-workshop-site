@@ -22,46 +22,32 @@ Instalasi JBoss EAP
 
 Karena kita akan menggunakan mesin yang sama, maka instalasi hanya diperlukan sekali tapi nantinya kita akan jalankan 2 server dengan konfigurasi sendiri-sendiri. Masing-masing server yang jalan di mesin yang sama akan menggunakan port yang berbeda. Lain halnya jika kita menggunakan mesin yang berbeda, kita dapat menggunakan port yang sama (sebaiknya memang kita set menggunakan port yang sama untuk kemudahaan administrasi).
 
-1. Login sebagai `root` kemudian tambahkan user `jboss` dan set password-nya. Lalu login dengan user `jboss`
-    
-    ```sh
-    adduser jboss
-    passwd jboss
-    su - jboss
-    ```
-
-2. Download installer berupa [file zip JBoss EAP versi 6.3.0](http://www.jboss.org/download-manager/file/jboss-eap-6.3.0.GA.zip)  (versi terakhir saat artikel ini dibuat)
-
-    ```sh
-    wget http://www.jboss.org/download-manager/file/jboss-eap-6.3.0.GA.zip
-    ```
-
- 3. Instal JBoss EAP di direktori `/home/jboss` dengan mengekstrak file zip
-
-    ```sh
-    unzip jboss-eap-6.3.0.GA.zip -d /home/jboss/
-    ```
-    
+EAP sudah terinstall pada lab sebelumnya.
 
 
 Mempersiapkan Dua Server EAP
 ----------------------------
 
-Jika anda menggunakan dua mesin yang berbeda, lakukan instalasi di kedua mesin. Lalu edit file konfigurasi `standaline-ha.conf` yang ada di direktori `/home/jboss-as/jboss-eap-6.3/standalone/configuration`
+Jika anda menggunakan dua mesin yang berbeda, lakukan instalasi di kedua mesin. Lalu edit file konfigurasi `standaline-ha.conf` yang ada di direktori `D:/server/jboss/eap/jboss-eap-6.4/standalone/configuration`
 
 1.  Buat dua folder konfigurasi untuk masing-masing server EAP.
    
-    Jika anda menggunakan mesin yang sama, copy dahulu direktori `standalone/` menjadi `standalone-server1/` dan `standalone-server2/`
+    Jika anda menggunakan mesin yang sama, create dua direktori baru sebagai server1 dan server2, kemudian copy direktori `standalone/` ke kedua direktori tersebut.
 
 	```sh
-	cd /home/jboss/jboss-eap-6.3/
-	cp -R standalone standalone-server1
-	cp -R standalone standalone-server2
+	d:
+	cd /server/jboss/eap/
+	mkdir server-standalone-ha
+	cd server-standalone-ha
+	mkdir server1
+	mkdir server2
+	cp -R jboss-eap-6.4/standalone server1
+	cp -R jboss-eap-6.4/standalone server2
 	```
 
-2.  Edit file `standalone-ha.xml` pada masing-masing direktori server1 dan server2 yaitu di `standalone-serverX/configuration/` (ganti X dengan 1 atau 2)
+2.  Edit file `standalone-ha.xml` pada masing-masing direktori server1 dan server2 yaitu di `serverX/configuration/` (ganti X dengan 1 atau 2)
     
-    Cari konfigurasi __modcluster__ seperti dibawah ini. Lalu ganti IP address yang tertera pada attribute __`proxy-list`__. Karena kita akan menginstal JBoss Web Server (Load balancer) pada mesin yang sama (localhost) yadi kita isi kan IP 127.0.0.1 dengan port default yaitu 6666.
+    Cari konfigurasi __modcluster__ seperti dibawah ini. Lalu ganti IP address yang tertera pada attribute __`proxy-list`__. Karena kita akan menginstal JBoss Web Server (Load balancer) pada mesin yang sama (localhost) tadi kita isi kan IP 127.0.0.1 dengan port default yaitu 6666.
     
 
 	```xml
@@ -73,80 +59,82 @@ Jika anda menggunakan dua mesin yang berbeda, lakukan instalasi di kedua mesin. 
 		</mod-cluster-config>
 	</subsystem>
 	```
-	
-    > Komunikasi antar server (HA) dalam cluster menggunakan protocol multicast (UDP).   
-    > Jika jaringan anda tidak mendukung UDP karena diblok oleh firewall, maka anda 
-    > perlu mengubah konfigurasi agar menggunakan TCP, bukan UDP. Lihat di sub bab 
-    > __Cluster Network__ dibawah untuk detil mengenai konfigurasi TCP. 
-	
-3.  __Selesai!__ Perubahan konfigurasi JBoss EAP hanya sesederhana itu, karena file konfigurasi untuk HA (cluster) telah tersedia pada default instalasi. Kita bisa menggunakan `standalone-ha.xml` atau `standalone-full-ha.xml` untuk tujuan LAB ini.
 
-    Sekarang kita jalankan kedua server tersebut. 
+3.  Edit file `standalone-ha.xml` pada masing-masing direktori server1 dan server2 yaitu di `serverX/configuration/` (ganti X dengan 1 atau 2)
     
-    Jalankan server pertama
+    Cari konfigurasi __jgroups__ seperti dibawah ini. Default adalah menggunakan UDP atau multicast, tidak perlu ada konfigurasi setiap host. Di sini kita akan mencoba menggunakan TCP atau unicast, dan konfigurasi tiap host diperlukan.
+
+Bisa kita lihat konfigurasi JGroups dibawah ini. Konfigurasi ini sudah sedikir dimodifikasi, versi aslinya anda tidak akan menemukan blok element `<stack name="tcp">`. Blok elemen ini digunakan jika komunikasi antar server dan dari server ke load balancer tidak bisa menggunakan multicast (UDP). Untuk menggunakan protokol TCP pada komunikasi cluster kita perlu mengubah nilai dari attribute `default-stack` pada element `subsystem` dibawah ini menjadi __`tcp`__
+
+```xml
+        <subsystem xmlns="urn:jboss:domain:jgroups:1.1" default-stack="tcp">
+            <stack name="udp">
+                <transport type="UDP" socket-binding="jgroups-udp"/>
+                <protocol type="PING"/>
+                <protocol type="MERGE3"/>
+                <protocol type="FD_SOCK" socket-binding="jgroups-udp-fd"/>
+                <protocol type="FD"/>
+                <protocol type="VERIFY_SUSPECT"/>
+                <protocol type="pbcast.NAKACK"/>
+                <protocol type="UNICAST2"/>
+                <protocol type="pbcast.STABLE"/>
+                <protocol type="pbcast.GMS"/>
+                <protocol type="UFC"/>
+                <protocol type="MFC"/>
+                <protocol type="FRAG2"/>
+                <protocol type="RSVP"/>
+            </stack>
+            <stack name="tcp">
+                <transport type="TCP" socket-binding="jgroups-tcp"/>
+                <protocol type="MPING" socket-binding="jgroups-mping"/>
+                <protocol type="TCPPING">
+                    <property name="initial_hosts">localhost[7600],localhost[7700]</property>
+                    <property name="num_initial_members">2</property>
+                    <property name="port_range"> 0</property>
+                    <property name="timeout">
+                        2000
+                    </property>
+                </protocol>
+                <protocol type="MERGE2"/>
+                <protocol type="FD_SOCK" socket-binding="jgroups-tcp-fd"/>
+                <protocol type="FD"/>
+                <protocol type="VERIFY_SUSPECT"/>
+                <protocol type="pbcast.NAKACK"/>
+                <protocol type="UNICAST2"/>
+                <protocol type="pbcast.STABLE"/>
+                <protocol type="pbcast.GMS"/>
+                <protocol type="UFC"/>
+                <protocol type="MFC"/>
+                <protocol type="FRAG2"/>
+                <protocol type="RSVP"/>
+            </stack>
+        </subsystem>
+```
+
+Jika anda menggunakan protocol TCP dan menggunakan mesin yang berbeda, ganti nilai element `property` dengan name `initial_host` sesuai IP address dari masing-masing mesin, misalnya `192.168.0.12[7600],192.168.0.13[7600]`.
+
+Nilai 7600 adalah port dari __jgroups-tcp__ yang dispesifikasikan pada element `socket-binding-group`
+
+	
+4.  create file untuk menjalankan server di direktori D:/server/jboss/eap/server-standalone-ha/serverX/run.bat
     
     ```sh
-    ./bin/standalone.sh -b 0.0.0.0 -u 230.0.0.4 -c standalone-ha.xml -Djboss.server.base.dir=standalone-server1 -Djboss.node.name=server1 -Djboss.socket.binding.port-offset=100
+    ../../jboss-eap-6.4/bin/standalone.sh -b 0.0.0.0 -c standalone-ha.xml -Djboss.server.base.dir=standalone-server1/standalone -Djboss.node.name=server1 -Djboss.socket.binding.port-offset=0
     ```
-    
-    Sekarang jalankan server kedua di console/terminal yang lain:
     
     ```sh
-    ./bin/standalone.sh -b 0.0.0.0 -u 230.0.0.4 -c standalone-ha.xml -Djboss.server.base.dir=standalone-server2 -Djboss.node.name=server2 -Djboss.socket.binding.port-offset=200
+    ../../jboss-eap-6.4/bin/standalone.sh -b 0.0.0.0 -c standalone-ha.xml -Djboss.server.base.dir=standalone-server2/standalone -Djboss.node.name=server2 -Djboss.socket.binding.port-offset=100
     ```
     
-    Karena kita menggunakan mesin yang sama, agar port dari kedua server tersebut tidak bentrok kita perlu menggunakan port-offset yang berbeda.
-
-    Berikut penjelasan mengenai opsi yang digunakan pada perintah diatas
+Berikut penjelasan mengenai opsi yang digunakan pada perintah diatas
  
 
-	* `-b` : Binding address. 0.0.0.0 artinya port akan di-binding kesemua network interface/IP address yang dimilimi meson terse but.
-	* `-u` : Multicast address. Multicast address digunakan oleh mod_cluster dari JBoss EAP untuk memberikan informasi kepada load balancer.
-	* `-Djboss.node.name` : Nama node. Nama ini dapat juga diset pada file `standalone.xml ` misalnya `<server name="server1" xmlns="urn:jboss:domain:1.5">`
+	* `-b` : Binding address. 0.0.0.0 artinya port akan di-binding kesemua network interface/IP address yang dimilimi mesin tersebut.
+	* `-Djboss.node.name` : Nama node.
 	* `-Djboss.socket.binding.port-offset` : Default port yang akan digunakan nilainya akan ditambahkan dengan nilai offset ini. Misalnya default port 8080 akan menjadi
 	  8180 (8080+100) jika nilai offset adalah 100
 	  
-4.  Untuk memudahkan menjalankan kedua server tersebut, kita buat script berikut:
- 
-    Buat file startserver1.sh di direktori instalasi `/home/jboss/jboss-eap-6.3/`
-
-	```
-	!/bin/bash
-	./bin/standalone.sh \
-	-b 0.0.0.0 \
-	-u 230.0.0.4 \
-	-c standalone-ha.xml \
-	-Djboss.server.base.dir=standalone-server1 \
-	-Djboss.node.name=server1 \
-	-Djboss.socket.binding.port-offset=100
-	```
-
-    Set file tersebut menjadi executable
-
-    ```sh
-    chmod 755 startserver1.sh
-
-    ```
-    
-    Untuk server ke-2, buat file startserver2.sh di direktori instalasi jboss-eap, lalu     
-    ganti server1 menjadi server2 dan ganti nilai port-offset
-
-	```
-	cp startserver1.sh startserver2.sh
-	```
-	
-	Isi dari file `startserver2.sh` adalah seperti berikut:
-
-	```	
-	./bin/standalone.sh \
-	-b 0.0.0.0 \
-	-u 230.0.0.4 \
-	-c standalone-ha.xml \
-	-Djboss.server.base.dir=standalone-server2 \
-	-Djboss.node.name=server2 \
-	-Djboss.socket.binding.port-offset=200
-	```
-
+5.  Jalankan script run.bat pada kedua folder
 
 ### Melihat Konfigurasi HA dari server EAP
 
@@ -216,81 +204,12 @@ Keterangan mengenai detail konfigurasi bisa dilihat di [dokumentasi](https://acc
     </web-app>
     
 
-
-
-#### Cluster Network
-
-Konfigurasi JGroups untuk clustering dapat dilihat dibawah ini. Dengan mekanisme UDP ini, setting load balancer menjadi otomatis. Bisa dibilang JBoss Web Server dengan mod_cluster tidak perlu dikonfigurasi manual untuk mengetahui masing-masing IP address.
-
-Bisa kita lihat konfigurasi JGroups dibawah ini. Konfigurasi ini sudah sedikir dimodifikasi, versi aslinya anda tidak akan menemukan blok element `<stack name="tcp">`. Blok elemen ini digunakan jika komunikasi antar server dan dari server ke load balancer tidak bisa menggunakan multicast (UDP). Untuk menggunakan protokol TCP pada komunikasi cluster kita perlu mengubah nilai dari attribute `default-stack` pada element `subsystem` dibawah ini menjadi __`tcp`__
-
-```xml
-        <subsystem xmlns="urn:jboss:domain:jgroups:1.1" default-stack="udp">
-            <stack name="udp">
-                <transport type="UDP" socket-binding="jgroups-udp"/>
-                <protocol type="PING"/>
-                <protocol type="MERGE3"/>
-                <protocol type="FD_SOCK" socket-binding="jgroups-udp-fd"/>
-                <protocol type="FD"/>
-                <protocol type="VERIFY_SUSPECT"/>
-                <protocol type="pbcast.NAKACK"/>
-                <protocol type="UNICAST2"/>
-                <protocol type="pbcast.STABLE"/>
-                <protocol type="pbcast.GMS"/>
-                <protocol type="UFC"/>
-                <protocol type="MFC"/>
-                <protocol type="FRAG2"/>
-                <protocol type="RSVP"/>
-            </stack>
-            <stack name="tcp">
-                <transport type="TCP" socket-binding="jgroups-tcp"/>
-                <protocol type="MPING" socket-binding="jgroups-mping"/>
-                <protocol type="TCPPING">
-                    <property name="initial_hosts">0.0.0.0[7600],0.0.0.0[7600]</property>
-                    <property name="num_initial_members">2</property>
-                    <property name="port_range"> 0</property>
-                    <property name="timeout">
-                        2000
-                    </property>
-                </protocol>
-                <protocol type="MERGE2"/>
-                <protocol type="FD_SOCK" socket-binding="jgroups-tcp-fd"/>
-                <protocol type="FD"/>
-                <protocol type="VERIFY_SUSPECT"/>
-                <protocol type="pbcast.NAKACK"/>
-                <protocol type="UNICAST2"/>
-                <protocol type="pbcast.STABLE"/>
-                <protocol type="pbcast.GMS"/>
-                <protocol type="UFC"/>
-                <protocol type="MFC"/>
-                <protocol type="FRAG2"/>
-                <protocol type="RSVP"/>
-            </stack>
-        </subsystem>
-```
-
-Jika anda menggunakan protocol TCP dan menggunakan mesin yang berbeda, ganti nilai element `property` dengan name `initial_host` sesuai IP address dari masing-masing mesin, misalnya `192.168.0.12[7600],192.168.0.13[7600]`.
-
-Nilai 7600 adalah port dari __jgroups-tcp__ yang dispesifikasikan pada element `socket-binding-group`
-
 #### Socket Binding
 
 Konfigurasi yang berbeda pada mode standalone HA (cluster) yang lain adalah pada blok socket binding. Pada konfigurasi ini terdapat konfigurasi untuk port yang digunakan untuk mekanisme clustering.
 
-Jika kita ingin penggunaan TCP port, bukan multicast (UDP), maka pastikan pada file konfigurasi anda memiliki konfigurasi binding dengan nama `jgourps-tcp` dan `jgroups-tcp-fd` seperti dibawah ini:
+Coba buka kembali standalone-ha.xml, dan cari tag <socket-binding-group>. Element ini mendefinisikan semua port yang digunakan.
 
-```xml
-    <socket-binding-group name="standard-sockets" default-interface="public" port-offset="${jboss.socket.binding.port-offset:0}">
-        ....
-        <socket-binding name="jgroups-mping" port="0" multicast-address="${jboss.default.multicast.address:230.0.0.4}" multicast-port="45700"/>
-        <socket-binding name="jgroups-tcp" port="7600"/>
-        <socket-binding name="jgroups-tcp-fd" port="57600"/>
-        <socket-binding name="jgroups-udp" port="55200" multicast-address="${jboss.default.multicast.address:230.0.0.4}" multicast-port="45688"/>
-        <socket-binding name="jgroups-udp-fd" port="54200"/>
-        <socket-binding name="modcluster" port="0" multicast-address="224.0.1.105" multicast-port="23364"/>
-        ....
-    </socket-binding-group>
-```
 
 Instalasi dan Konfigurasi JBoss Web Server dan mod_cluster
 ----------------------------------------------------------
@@ -307,22 +226,7 @@ Jika tidal memiliki Red Hat support subscription, anda bisa juga download versi 
 
 http://mod-cluster.jboss.org/downloads/1-2-6-Final-bin
 
-Download file yang sudah termasuk Apache HTTP Server (httpd) dan sesuai platform yang dan gunakan misalnya [`mod_cluster-1.2.6.Final-linux2-x64-ssl.tar.gz`](http://downloads.jboss.org/mod_cluster//1.2.6.Final/linux-x86_64/mod_cluster-1.2.6.Final-linux2-x64-ssl.tar.gz) untuk "mod_cluster native budles with httpd and openssl"
-
-1.  Login sebagai root lalu ekstrak file installer di direktori `/`
-	Program Apache httpd akan diinstall di `/opt/jboss/httpd` lalu jalankan dengan perintah `apachectl start` 
-
-    ```
-    tar zxvf mod_cluster-1.2.6.Final-macosx-x64.tar.gz -C /
-    cd /opt/jboss/httpd/bin/
-    ./apachectl start
-	```
-
-2.  Modul mod_cluster secara default sudah terinstal dan terkonfigurasi sebagai modul Apache HTTP server. 
-    Kita sekarang bisa cek JBoss EAP cluster yang sudah terdeteksi oleh  Apache HTTP server dengan mengakses 
-    ke URL berikut:
-    
-    [http://localhost:6666/mod_cluster_manager](http://localhost:6666/mod_cluster_manager)
+Pilih platform yang sesuai
 
 Mod_cluster di Windows
 ----------------------
@@ -331,13 +235,13 @@ Download mod_cluster untuk windows x86
 
 [mod_cluster-1.2.6.Final-windows-x86.zip](http://downloads.jboss.org/mod_cluster//1.2.6.Final/windows/mod_cluster-1.2.6.Final-windows-x86.zip)
 
-1. Ekstrak file `mod_cluster-1.2.6.Final-windows-x86-ssl.zip` di direktori --misalnya-- `D:\httpd-2.2`
+1. Ekstrak file `mod_cluster-1.2.6.Final-windows-x86-ssl.zip` di direktori --misalnya-- `D:/server/httpd-2.2`
 2. Buka command prompt dengan user Administrator (run as Administrator)
 3. Masuk ke direktori tersebut dan jalankan `installconf.bat`
 
 	```
 	D:\
-	cd httpd-2.2\bin
+	cd server\httpd-2.2\bin
     installconf.bat
 	```
 4. Jalankan Web Server dengan perintah `httpd.exe`
@@ -356,22 +260,14 @@ Kita akan test HA Cluster dengan beberapa scenario:
 
   - Load balancing HTTP request. Kita akan gunakan browser untuk mengakses suatu aplikasi ke IP & port dari HTTP server (load balancer). Kita harapkan load balancer akan mengarahkan request ke masing-masing server JBoss EAP secara seimbang (load balance)
   - Failed over HTTP request. Kita akan matikan salah satu server JBoss EAP lalu akses aplikasi IP & port dari HTTP server (load balancer). Kita harapkan load balancer dapat selalu mengarahkan request ke server yang hidup, sehingga kita tidak pernah mendapatkan error karena tidak dapat terkoneksi ke server yang dimatikan. 
-  - Kita juga akan lihat bahwa session antar server JBoss EAP akan saling terreplikasi.
+  - Kita juga akan lihat bahwa session antar server JBoss EAP akan saling tereplikasi.
 
 
-
-1. Untuk keperluan test, kita perlu mendeploy suatu aplikasi di masing-masing server JBoss EAP. Download aplikasi WAR dari URL berikut:
    
-   ```
-   cd /home/jboss-as/
-   wget https://github.com/ejlp12/jboss-eap-workshop-site/raw/master/resources/cluster-test.war
-   ```
-   
-2. Deploy file `cluster-test.war` ke masing-masing server JBoss EAP dengan meng-copy file ke direktory `deployment`
+1. Deploy file `cluster-test.war` ke masing-masing server JBoss EAP dengan meng-copy file ke direktory `D:/server/jboss/eap/server-standalone-ha/serverX/standalone/deployment`
 
   ```
-  cp cluster-test.war jboss-eap-6.3/standalone-server1/deployment/
-  cp cluster-test.war jboss-eap-6.3/standalone-server2/deployment/
+  D:/server/jboss/eap/server-standalone-ha/serverX/standalone/deployment
   ```
 
 3. Test masing-masing aplikasi dengan cara mengakses langsung URL dari JBoss EAP (bukan URL load-balancer)
@@ -389,23 +285,7 @@ Kita akan test HA Cluster dengan beberapa scenario:
    
    Perhatikan lagi "nodeId" dan jumlah session.
    
-5. Stop salah satu server, misalnya server1 dengan cara berikut:
-   
-   ```sh
-   cd /home/jboss-as/jboss-eap-6.3/bin
-   ./jboss-cli.sh
-   ```
-   
-   Setelah masuk ke mode command line inteface (CLI) dengan mendapatkan prompt `[disconnected /]`
-   Jalankan perintah berikut
-   
-   ```
-   connect localhost:10199
-   shutdown
-   ```
-   
-   > Port default untuk management adalah 9999, port management pada server1 adalah 10199 (9999 + 100)
-   > karena offset port server1 adalah 100
+5. Stop salah satu server, ctrl-c 
    
    Akses halaman [http://localhost:6666/cluster-test](http://localhost:6666/cluster-test) secara berkali-kali dan 
    perhatikan nama dari "nodeId" untuk melihat efek dari matinya server1.
