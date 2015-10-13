@@ -1,7 +1,7 @@
 # Mengkonfigurasi Koneksi JBoss EAP ke ProsgreSQL Database
 
 >> Tutorial ini dibuat dengan menggunakan JBoss EAP versi 6.4.0, cara yang sama untuk koneksi ke database lainnya misalnya
-MySQL, Oracle Database, MariaDB akan sama saja. Yang membedakan adalah library JDBC, connection URL, driver class, dan 
+MySQL, Oracle Database, MariaDB akan sama saja. Yang membedakan adalah library seJDBC, connection URL, driver class, dan 
 datasource class.
 
 Sebelum melakukan konfigurasi JBoss EAP agar terkoneksi ke database, pertama tentu perlu dipastikan bahwa database sudah
@@ -74,7 +74,7 @@ download file driver JDBC4.
 	
    Karakter pertama pada file tersebut tidak boleh spasi atau karakter lainnya tapi harus dimulai dengan `<?xml`
 
-   Selai kita membuat module untuk JDBC driver.
+   Selesai kita membuat module untuk JDBC driver.
 
 ## Buat Konfigurasi Datasource
 
