@@ -3,15 +3,15 @@
 Pastikan anda sudah memiliki (terinstal JDK atau JRE) Java 1.6 atau yang lebih tinggi
 Buka Terminal (Linux) atau Command Line (Windows) kemudian jalankan perintah
    
-	```
+
    	java -version
-   	```
+
    
 Kemudian juga cek apakah variabel `JAVA_HOME` sudah diset di environment, jika belum set JAVA_HOME
    
-  	```
+
    	export JAVA_HOME=/path/to/jdk
-   	```
+
    	
 
 Installasi Menggunakan GUI
