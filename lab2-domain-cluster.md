@@ -249,7 +249,7 @@ Langkah berikut menggunakan asumsi JBoss EAP anda diinstal di direktori `D:/serv
 	
 7.  create file untuk menjalankan server di direktori D:/server/jboss/eap/server-domain/server1/run.bat 
     ```
-    ../../jboss-eap-6.4/bin/domain.sh -c domain.xml --host-config=host-master.xml -Djboss.domain.base.dir=domain -Djboss.node.name=server1 -Djboss.socket.binding.port-offset=0
+    ../../jboss-eap-6.4/bin/domain.sh -c domain.xml --host-config=host-master.xml -Djboss.domain.base.dir=domain
     ```
 
 8.  Jalankan Domain Controller atau master host dengan perintah berikut:
@@ -320,7 +320,7 @@ Kita akan mensimulasikan penyiapan JBoss EAP Server di 2 mesin yaitu machine-2 d
       <host name="machine-2" xmlns="urn:jboss:domain:1.6">
     ``` 
 
-    Pada file ini didefinisikan alamat IP atau hostname dan port dari host-master atau Domain Controller, anda bisa lihat seperti ini. 
+    Ubah port management native-interface dari machine-2 menjadi 19999.
    
     ```
     <management-interfaces>
@@ -330,39 +330,83 @@ Kita akan mensimulasikan penyiapan JBoss EAP Server di 2 mesin yaitu machine-2 d
         </management-interfaces>
     ```
     
-    Ubah port management dari machine-2 menjadi 19999.
+    Hapus konfigurasi servers, node server akan dibuat kemudian
     
-3.  Ulangi langkah #2 untuk direktori `machine-3`, gunakan port management 29999.
-4.  create file untuk menjalankan server di direktori D:/server/jboss/eap/server-domain/machine-2/run.bat
+    ```
+    <servers>
+        <server name="server-one" group="main-server-group">
+            <socket-bindings port-offset="0"/>
+        </server>
+        <server name="server-two" group="other-server-group">
+            <!-- server-two avoids port conflicts by incrementing the ports in
+                 the default socket-group declared in the server-group -->
+            <socket-bindings port-offset="150"/>
+        </server>
+    </servers>
+    ```
+    
+3.  create file untuk menjalankan server di direktori D:/server/jboss/eap/server-domain/machine-2/run.bat
 
     ```
-    ../../jboss-eap-6.4/bin/domain.sh --host-config=host-slave.xml -Djboss.domain.base.dir=domain -Djboss.domain.master.address=localhost
-    ```
-    
-    create file untuk menjalankan server di direktori D:/server/jboss/eap/server-domain/machine-3/run.bat
-    
-     ```
     ../../jboss-eap-6.4/bin/domain.sh --host-config=host-slave.xml -Djboss.domain.base.dir=domain -Djboss.domain.master.address=localhost
     ```
     
     >> Pada kondisi nyata dimana Domain Controler atau master-host berbeda mesin dengan mesin anggota cluster maka nilai 127.0.0.1 harus diubah dengan IP address dari master-host.
 
+4.  Jalankan machine-2 host dengan perintah berikut:
 
+    ```
+    run.bat
+    ```
+5.  Ulangi langkah 2, 3, 4 untuk machine-3, gunakan port management native 29999.
+6.  Buka web management console via browser http://localhost:9990/ machine-2 dan machine-3 akan terlihat di sana.
    
-7.  Tes dengan men-deploy aplikasi `cluster-test.war`. Buka management console, klik menu "Deployment", klik tombol "Add" dan klik "Browse" untuk memilih file `cluster-test.war`. Klik Next kemudian Save. 
 
-8.  Pilih `cluster-test.war` di tabel content repository, lalu klik tombol "Assign". Pada window "Select server group" pilih `other-server-group` yaitu group yang profile-nya adalah `full-ha`. Klik Save.
+## Membuat node server
 
-9.  Pilih menu Deployment jika belum berada di halaman Deployment. Klik tab "SERVER GROUPS", kemudian pada tabel daftar server groups klik "View >" pada baris `other-server-group`. Anda bisa lihat daftar aplikasi yang sudah ter-deploy di `other-server-group`.
+Di sini kita akan membuat node server via web browser
 
-10. Test aplikasi dengan mengaksed ke URL berikut
-    - server-two pada port (8080+150) -> [http://localhost:8230/cluster-test](http://localhost:8230/cluster-test)
-    - server-four pada port (8080+300) -> [http://localhost:8380/cluster-test](http://localhost:8380/cluster-test)
+1.  Buka web management console via browser http://localhost:9990/
+2.  Klik tab domain
+3.  Pilih host machine-2 di sebelah kiri
+4.  Klik Server Configurations
+5.  Klik tombol Add sebelah kanan untuk menambah server di machine-2
+    Name: node-1
+    Server Group: other-server-group
+    Port offset: 100
+6. Pilih tab runtime
+7. Klik overview
+8. Di table kanan akan terlihat host machine-2 mempunyai server node-1, klik start server untuk menjalankan
+9. Tambahkan server lagi di machine-2, dan nyalakan:
+    Name: node-2
+    Server Group: main-server-group
+    Port offset: 200
+10. Tambahkan server di machine-3, dan nyalakan:
+    Name: node-3
+    Server Group: other-server-group
+    Port offset: 300
+11. Tambahkan server lagi di machine-3, dan nyalakan (jika RAM server anda tidak cukup, node-4 tidak perlu dinyalakan):
+    Name: node-4
+    Server Group: main-server-group
+    Port offset: 400
+12. Sekarang ada 4 node child, node-1 dan node-3 berada di group other-server-group, sementara node-2 dan node-4 berada di group main-server-group
+
+### Deployment
+
+1.  Buka web management console via browser http://localhost:9990/
+2.  Pilih tab Deployment
+3.  Klik tombol add
+4.  Upload cluster-test.war
+5.  Klik next, lalu save
+6.  File sudah terupload namun belum dideploy
+7.  Klik cluster-test.war
+8.  Klik assign
+9.  Pilih other-server-group
+10.  cluster-test.war telah terinstall di other-server-group (node-1 & node3)
+11. Test aplikasi dengan mengaksed ke URL berikut
+    - node-1 pada port (8080+100) -> [http://localhost:8130/cluster-test](http://localhost:8230/cluster-test)
+    - node-2 pada port (8080+300) -> [http://localhost:8380/cluster-test](http://localhost:8380/cluster-test)
    
 ## Menyiapkan Load Balancer (Apache Web Server dengan mod_cluster add-on)
 
 Silakan dicoba sendiri, caranya hampir sama dengan pada saat anda mensetup untuk standalone-ha di LAB sebelumnya :-)
-
-![image](https://cloud.githubusercontent.com/assets/3068071/7278786/cec78d8e-e941-11e4-80e0-5c2a49941e72.png)
-
-
