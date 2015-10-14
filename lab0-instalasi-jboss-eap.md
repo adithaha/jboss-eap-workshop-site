@@ -25,7 +25,7 @@ Installasi Menggunakan GUI
 
 2.  Pilih bahasa yang digunakan selama instalasi, klik OK
 3.  Setujui EULA, klik Next
-4.  Saat diminta memasukan "installation path" ketik `/home/jboss/EAP-6.4`, klik Yes.
+4.  Saat diminta memasukan "installation path" ketik `/server/jboss/eap/jboss-eap-6.4`, klik Yes.
 	Jika direktori belum ada, anda akan ditanya apakah akan dibuat direktori tersebut, klik OK.	
 5.  Langkah selanjutnya akan ditampilkan paket-paket yang akan diinstal. Buka (expand) semua komponen yang ada di daftar sehingga anda bisa melihat semua komponen yang akan di instal.
 	Klik Next.
@@ -55,10 +55,10 @@ Uninstall JBoss EAP
 
 Pada dasarnya anda dapat melakukan uninstall JBoss EAP hanya dengan menghapus direktori.
 
-1.  Masuk ke direktori `/home/jboss/EAP-6.4/Uninstaller` dan jalankan program uninstaller
+1.  Masuk ke direktori `/server/jboss/eap/jboss-eap-6.4/Uninstaller` dan jalankan program uninstaller
 
 	```
-	cd /home/jboss/EAP-6.4/Uninstaller
+	cd /server/jboss/eap/jboss-eap-6.4/Uninstaller
 	java -jar uninstaller.jar
 	```
 2.  Pilih force the deletion..., klik Uninstall
@@ -86,7 +86,7 @@ Eksplorasi JBoss EAP
 1. Lihat file log dengan menggunakan editor atau perintah `tail`. 
 
 	```
-    tail -f /home/jboss/EAP-6.4/standalone/log/server.log
+    tail -f /server/jboss/eap/jboss-eap-6.4/standalone/log/server.log
 	```
 	
 	Keluar dari perintah `tail` dengan CTRL+C
@@ -103,7 +103,7 @@ Eksplorasi JBoss EAP
 	
 	Jika hanya ada satu proses java, anda bisa menstop proses dengan perintah `killall java`
 
-3. Masuk ke direktori `/home/jboss/EAP-6.4/bin` yang berisi beberapa script untuk menjalankan JBoss EAP, mengakses ke command line interface (CLI), dan juga direktori `init.d` yang menyimpan script untuk menjalankan JBoss EAP sebagai service di Linux.
+3. Masuk ke direktori `/server/jboss/eap/jboss-eap-6.4/bin` yang berisi beberapa script untuk menjalankan JBoss EAP, mengakses ke command line interface (CLI), dan juga direktori `init.d` yang menyimpan script untuk menjalankan JBoss EAP sebagai service di Linux.
 
 	Buka dan lihat file `standalone.conf` atau di Windows file tersebut bernama `standalone.conf.bat`, lihat baris yang menunjukan setting minimum dan maximum heap size: 
 	
@@ -111,7 +111,7 @@ Eksplorasi JBoss EAP
 	
 	Kita dapat mengubah nilai Xms, Xmx dan XX:MaxPermSize sesuai kebutuhan.
 	
-4.  Masuk ke direktori `/home/jboss/EAP-6.4/modules`, anda akan mendapatkan banyak sekali direktori yang berisi module.
+4.  Masuk ke direktori `/server/jboss/eap/jboss-eap-6.4/modules`, anda akan mendapatkan banyak sekali direktori yang berisi module.
 	
 	Sebuah modul biasanya disimpan dalam organisasi direktori yang strukturnya mengikuti Java package, misalnya module untuk dom4j disimpan di direktori `<EAP_INSTALL_DIR>/modules/system/layers/base/org/dom4j/`. Di dalam direktori tersebut terdapat folder `main` dengan isi library (file JAR) dan metadata dari module tersebut yaitu file `module.xml`
 
