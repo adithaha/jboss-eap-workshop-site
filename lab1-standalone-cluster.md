@@ -28,7 +28,6 @@ EAP sudah terinstall pada lab sebelumnya.
 Mempersiapkan Dua Server EAP
 ----------------------------
 
-Jika anda menggunakan dua mesin yang berbeda, lakukan instalasi di kedua mesin. Lalu edit file konfigurasi `standaline-ha.conf` yang ada di direktori `D:/server/jboss/eap/jboss-eap-6.4/standalone/configuration`
 
 1.  Buat dua folder konfigurasi untuk masing-masing server EAP.
    
