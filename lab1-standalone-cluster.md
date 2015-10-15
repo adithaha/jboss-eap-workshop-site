@@ -118,11 +118,11 @@ Mempersiapkan Dua Server EAP
 4.  create file untuk menjalankan server di direktori D:/server/jboss/eap/server-standalone-ha/serverX/run.bat
     
     ```sh
-    ../../jboss-eap-6.4/bin/standalone.sh -b 0.0.0.0 -c standalone-ha.xml -Djboss.server.base.dir=standalone-server1/standalone -Djboss.node.name=server1 -Djboss.socket.binding.port-offset=0
+    ../../jboss-eap-6.4/bin/standalone.bat -b 0.0.0.0 -c standalone-ha.xml -Djboss.server.base.dir=standalone -Djboss.node.name=server1 -Djboss.socket.binding.port-offset=0
     ```
     
     ```sh
-    ../../jboss-eap-6.4/bin/standalone.sh -b 0.0.0.0 -c standalone-ha.xml -Djboss.server.base.dir=standalone-server2/standalone -Djboss.node.name=server2 -Djboss.socket.binding.port-offset=100
+    ../../jboss-eap-6.4/bin/standalone.bat -b 0.0.0.0 -c standalone-ha.xml -Djboss.server.base.dir=standalone -Djboss.node.name=server2 -Djboss.socket.binding.port-offset=100
     ```
     
     Berikut penjelasan mengenai opsi yang digunakan pada perintah diatas
