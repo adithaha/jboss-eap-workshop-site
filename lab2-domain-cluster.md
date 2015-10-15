@@ -1,6 +1,6 @@
 # LAB: Cluster Domain
 
-Pada LAB ini kita akan membuat 4 server JBoss EAP yang akan diset sebagai sebuah **server group** atau kita sebut **cluster**, dan ke-4 server tersebut dapat dikontrol & dimonitor oleh sebuah admin console terpusat yang berada di **Domain Controllerr**.
+Pada LAB ini kita akan membuat 4 server JBoss EAP yang akan diset sebagai sebuah **server group** atau kita sebut **cluster**, dan ke-4 server tersebut dapat dikontrol & dimonitor oleh sebuah admin console terpusat yang berada di **Domain Controller**.
 
 Ke-empat server akan saling mereplikasi session data (HTTP session maupun EJB Session), replikasi message pada messaging engine dan akan dikenali oleh JBoss Web Server (dengan modul  **mod_cluster**) sebagai server yang identik. JBoss Web Server akan berlaku sebagai load balancer yang membagi trafik dari pengguna aplikasi ke semua server tersebut.
 
@@ -249,7 +249,7 @@ Langkah berikut menggunakan asumsi JBoss EAP anda diinstal di direktori `D:/serv
 	
 7.  create file untuk menjalankan server di direktori D:/server/jboss/eap/server-domain/server1/run.bat 
     ```
-    ../../jboss-eap-6.4/bin/domain.sh -c domain.xml --host-config=host-master.xml -Djboss.domain.base.dir=domain
+    ../../jboss-eap-6.4/bin/domain.bat -c domain.xml --host-config=host-master.xml -Djboss.domain.base.dir=domain
     ```
 
 8.  Jalankan Domain Controller atau master host dengan perintah berikut:
@@ -348,7 +348,7 @@ Kita akan mensimulasikan penyiapan JBoss EAP Server di 2 mesin yaitu machine-2 d
 3.  create file untuk menjalankan server di direktori D:/server/jboss/eap/server-domain/machine-2/run.bat
 
     ```
-    ../../jboss-eap-6.4/bin/domain.sh --host-config=host-slave.xml -Djboss.domain.base.dir=domain -Djboss.domain.master.address=localhost
+    ../../jboss-eap-6.4/bin/domain.bat --host-config=host-slave.xml -Djboss.domain.base.dir=domain -Djboss.domain.master.address=localhost
     ```
     
     >> Pada kondisi nyata dimana Domain Controler atau master-host berbeda mesin dengan mesin anggota cluster maka nilai 127.0.0.1 harus diubah dengan IP address dari master-host.
