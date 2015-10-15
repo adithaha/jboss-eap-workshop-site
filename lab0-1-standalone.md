@@ -27,8 +27,8 @@ Membuat destination queue
 
 1. Buka file /server/jboss/eap/server-standalone/standalone/configuration/standalone-full.xml
 2. tambahkan bagian berikut:
-    ```xml
-      <subsystem xmlns="urn:jboss:domain:messaging:1.4">
+```xml
+    <subsystem xmlns="urn:jboss:domain:messaging:1.4">
         <hornetq-server>
           ...
           <jms-destinations>
@@ -38,8 +38,8 @@ Membuat destination queue
             </jms-queue>
           </jms-destinations>
         </hornetq-server>
-      </subsystem>
-    ```
+    </subsystem>
+```
 3. Restart server, ctrl-c dan kemudian jalankan lagi run.bat
 4. Buka web console di http://localhost:9990
 5. Buka Tab configuration
