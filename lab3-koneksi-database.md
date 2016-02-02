@@ -53,7 +53,7 @@ download file driver JDBC4.
 
 	```
 	cd <EAP_INSTALL_DIR>/modules
-	mkdir postgresql/main
+	mkdir org/postgresql/main
 	```
 
 2. Simpan file JDBC driver, misalnya `postgresql-9.3-1102.jdbc4.jar` di folder tersebut.
@@ -63,7 +63,7 @@ download file driver JDBC4.
 	<?xml version="1.0" encoding="UTF-8"?>  
 	<module xmlns="urn:jboss:module:1.0" name="org.postgresql">  
 	 <resources>  
-	 <resource-root path="postgresql-9.3-1102.jdbc4.jar"/>  
+	 <resource-root path="postgresql-9.3-1102-jdbc41.jar"/>  
 	 </resources>  
 	 <dependencies>  
 	 <module name="javax.api"/>  
