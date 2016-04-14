@@ -17,6 +17,9 @@ Konfigurasi untuk memisahkan log untuk package org.jboss.app.*
     Suffix: .yyyy-MM-dd
     Save
  7. Pilih tab Log Categories -> Add:
+    Name: org.jboss.app
+    Log Level: DEBUG
+    Save
  8. Pilih org.jboss.app
  9. Kolom Detail -> Handlers -> Add
  10. Pilih handler FILE_jboss_app yang tadi kita buat
