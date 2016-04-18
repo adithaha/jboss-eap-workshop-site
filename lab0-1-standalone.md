@@ -12,7 +12,7 @@ Mempersiapkan instance EAP
 ----------------------------
 
 1.  Buat folder untuk instance server EAP baru di /server/jboss/eap/server-standalone.
-2.  Copy /server/jboss/eap/jboss-eap-6.4.0/standalone ke /server/jboss/eap/server-standalone.
+2.  Copy direktori /server/jboss/eap/jboss-eap-6.4.0/standalone ke /server/jboss/eap/server-standalone.
 3.  Create file untuk menjalankan server di direktori /server/jboss/eap/server-standalone/run.bat
     
     ```sh
