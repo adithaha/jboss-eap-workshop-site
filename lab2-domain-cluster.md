@@ -247,7 +247,7 @@ Langkah berikut menggunakan asumsi JBoss EAP anda diinstal di direktori `D:/serv
 	</hornetq-server>
 	```
 	
-7.  create file untuk menjalankan server di direktori D:/server/jboss/eap/server-domain/server1/run.bat 
+7.  create file untuk menjalankan server di direktori D:/server/jboss/eap/server-domain/machine-1/run.bat 
     ```
     ../../jboss-eap-6.4/bin/domain.bat -c domain.xml --host-config=host-master.xml -Djboss.domain.base.dir=domain
     ```
@@ -404,7 +404,7 @@ Di sini kita akan membuat node server via web browser
 9.  Pilih other-server-group
 10.  cluster-test.war telah terinstall di other-server-group (node-1 & node3)
 11. Test aplikasi dengan mengaksed ke URL berikut
-    - node-1 pada port (8080+100) -> [http://localhost:8130/cluster-test](http://localhost:8230/cluster-test)
+    - node-1 pada port (8080+100) -> [http://localhost:8180/cluster-test](http://localhost:8180/cluster-test)
     - node-2 pada port (8080+300) -> [http://localhost:8380/cluster-test](http://localhost:8380/cluster-test)
    
 ## Menyiapkan Load Balancer (Apache Web Server dengan mod_cluster add-on)
