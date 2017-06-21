@@ -1,10 +1,10 @@
-# Membuat service JBoss EAP di Linux
+# Create service JBoss EAP domain mode on Linux
 
 > Catatan: JBoss EAP yang digunakan adalah versi 6.4. 
   Apa yang ditulis disini mungkin sesuai untuk semua JBoss EAP versi > 6.0 atau JBoss AS versi 7.1 dan WildFly versi 8.X
 
 
-# Create service for JBoss EAP domain master node
+## Create service for JBoss EAP domain master node
 
 To enable EAP autostart on server, EAP service will be installed.
 
@@ -72,7 +72,7 @@ Make service start automatically when server restart:
 $ chkconfig jboss-as-domain.sh on
 ```
 
-# Create service for JBoss EAP domain slave node
+## Create service for JBoss EAP domain slave node
 
 To enable EAP autostart on server, EAP service will be installed.
 
