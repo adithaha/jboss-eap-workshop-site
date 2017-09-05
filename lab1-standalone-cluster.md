@@ -1,13 +1,13 @@
 # LAB1
 
-Pada LAB ini kita akan membuat 2 server JBoss EAP yang akan diset sebagai standalone HA (high available), artinya masing-masing server akan berjalan selayaknya saat kita jalankan dengan menggunakan standalone.sh/.bat atau standalone-full.sh/.bat, masing-masing server akan memiliki admin console sendiri-sendiri artinya manajemen server, deployment aplikasi dilakukan secara independent, tetapi kedua server akan saling mereplikasi session data (HTTP session maupun EJB Session) dan kedua server akan dikenali oleh JBoss Web Server (dengan modul  mod_cluster) sebagai dua server yang identik dan JBoss Web Server akan berlaku sebagai load balancer yang membagi trafik ke kedua server tersebut.
+Pada LAB ini kita akan membuat 2 server JBoss EAP yang akan diset sebagai standalone HA (high available), artinya masing-masing server akan berjalan selayaknya saat kita jalankan dengan menggunakan standalone.sh/.bat atau standalone-full.sh/.bat, masing-masing server akan memiliki admin console sendiri-sendiri artinya manajemen server, deployment aplikasi dilakukan secara independent, tetapi kedua server akan saling mereplikasi session data (HTTP session maupun EJB Session) dan kedua server akan dikenali oleh JBoss EAP (dengan modul  mod_cluster) sebagai dua server yang identik dan JBoss EAP akan berlaku sebagai load balancer yang membagi trafik ke kedua server tersebut.
 
 Pada LAB ini kita akan men-setup hanya dua server di mesin yang sama, tapi pada dasarnya cara yang sama dapat kita terapkan untuk jumlah server lebih dari dua dan di mesin yang berbeda.
 
 ```
                                      ,------> JBoss EAP 
                                      |        (server1)
- Client  -----> JBoss Web Server ----+
+ Client  -----> JBoss EAP ----+
 (browser)        (loadbalancer)      |
                                      '------> JBoss EAP 
                                               (server2)
@@ -46,20 +46,34 @@ Mempersiapkan Dua Server EAP
 
 2.  Edit file `standalone-ha.xml` pada masing-masing direktori server1 dan server2 yaitu di `serverX/configuration/` (ganti X dengan 1 atau 2)
     
-    Cari konfigurasi __modcluster__ seperti dibawah ini. Lalu ganti IP address yang tertera pada attribute __`proxy-list`__. Karena kita akan menginstal JBoss Web Server (Load balancer) pada mesin yang sama (localhost) tadi kita isi kan IP 127.0.0.1 dengan port default yaitu 6666.
+    Cari konfigurasi __socket-binding-group__ seperti dibawah ini. Lalu ganti IP address yang tertera pada attribute __`proxy-list`__. Karena kita akan menginstal JBoss EAP (Load balancer) pada mesin yang sama (localhost) tadi kita isi kan IP 127.0.0.1 dengan port yaitu 8280.
     
 
 	```xml
-	<subsystem xmlns="urn:jboss:domain:modcluster:1.1">
-		<mod-cluster-config advertise-socket="modcluster" sticky-session="false" connector="ajp" proxy-list="127.0.0.1:6666">
-		    <dynamic-load-provider>
-		        <load-metric type="busyness"/>
-		    </dynamic-load-provider>
-		</mod-cluster-config>
-	</subsystem>
+	<socket-binding-group name="standard-sockets" default-interface="public" port-offset="${jboss.socket.binding.port-offset:0}">
+            ...
+	    <outbound-socket-binding name="server-lb">
+            	<remote-destination host="127.0.0.1" port="8280"/>
+            </outbound-socket-binding>
+        </socket-binding-group>
 	```
 
 3.  Edit file `standalone-ha.xml` pada masing-masing direktori server1 dan server2 yaitu di `serverX/configuration/` (ganti X dengan 1 atau 2)
+    
+    Cari konfigurasi __modcluster__ seperti dibawah ini. Lalu ganti IP address yang tertera pada attribute __`proxies`__. Karena kita akan menginstal JBoss EAP (Load balancer) pada mesin yang sama (localhost) tadi kita isi kan dengan binding server-lb di atas.
+    
+
+	```xml
+	<subsystem xmlns="urn:jboss:domain:modcluster:2.0">
+            <mod-cluster-config advertise-socket="modcluster" proxies="server-lb" advertise="false" connector="ajp">
+                <dynamic-load-provider>
+                    <load-metric type="cpu"/>
+                </dynamic-load-provider>
+            </mod-cluster-config>
+        </subsystem>
+	```
+
+4.  Edit file `standalone-ha.xml` pada masing-masing direktori server1 dan server2 yaitu di `serverX/configuration/` (ganti X dengan 1 atau 2)
     
     Cari konfigurasi __jgroups__ seperti dibawah ini. Default adalah menggunakan UDP atau multicast, tidak perlu ada konfigurasi setiap host. Di sini kita akan mencoba menggunakan TCP atau unicast, dan konfigurasi tiap host diperlukan.
 
@@ -115,7 +129,7 @@ Mempersiapkan Dua Server EAP
     Nilai 7600 adalah port dari __jgroups-tcp__ yang dispesifikasikan pada element `socket-binding-group`
 
 	
-4.  create file untuk menjalankan server di direktori D:/server/jboss/eap/server-standalone-ha/serverX/run.bat
+5.  create file untuk menjalankan server di direktori D:/server/jboss/eap/server-standalone-ha/serverX/run.bat
     
     ```sh
     ../../jboss-eap-6.4/bin/standalone.bat -b 0.0.0.0 -c standalone-ha.xml -Djboss.server.base.dir=standalone -Djboss.node.name=server1 -Djboss.socket.binding.port-offset=0
@@ -133,11 +147,11 @@ Mempersiapkan Dua Server EAP
 	* `-Djboss.socket.binding.port-offset` : Default port yang akan digunakan nilainya akan ditambahkan dengan nilai offset ini. Misalnya default port 8080 akan menjadi
 	  8180 (8080+100) jika nilai offset adalah 100
 	  
-5.  Jalankan script run.bat pada kedua folder
+6.  Jalankan script run.bat pada kedua folder
 
 ### Melihat Konfigurasi HA dari server EAP
 
-Sebelum kita lanjut dengan instalasi JBoss Web Server (Apache HTTP Server) dan module mod_clusternya. Saya akan bahas terlebih dahulu mengenai konfigurasi HA dari server EAP.
+Sebelum kita lanjut dengan instalasi JBoss EAP (Load Balancer) dan module mod_clusternya. Saya akan bahas terlebih dahulu mengenai konfigurasi HA dari server EAP.
 
 Kemudahan konfigurasi HA pada LAB ini karena sudah tersedianya file konfigurasi HA bawaan dari EAP yaitu file `standalone-ha.xml` atau `standalone-full-ha.xml`. Lalu apa bedanya file tersebut dengan file `standalone.xml` yang tanpa HA? Kita akan bandingkan sekarang. Silakan buka file `standalone-ha.xml` lagi
 
@@ -210,47 +224,74 @@ Konfigurasi yang berbeda pada mode standalone HA (cluster) yang lain adalah pada
 Coba buka kembali standalone-ha.xml, dan cari tag <socket-binding-group>. Element ini mendefinisikan semua port yang digunakan.
 
 
-Instalasi dan Konfigurasi JBoss Web Server dan mod_cluster
-----------------------------------------------------------
+Instalasi dan Konfigurasi JBoss EAP sebagai load balancer dengan modcluster
+---------------------------------------------------------------------------
 
-Untuk platform Windows lihat di sub-bab setelah ini.
+JBoss EAP 7 menggunakan Undertow sebagai web module. Undertow menggunakan metode non blocking IO, dan memiliki kemampuan load balancing dengan module modcluster
 
->> PERHATIAN: Default port dari HTTP server mod_cluster yang didownload adalah 6666. Jika anda menggunakan browser Google Chrome, anda akan mendapatkan error __ERR_UNSAFE_PORT__ karena port tersebut dianggap tidak aman. Agar port tersebut tidak diblok maka anda dapat menambahkan opsi misalnya `–explicitly-allowed-ports=6666,6667` pada shortcut dari aplikasi Chrome.
 
-Saat penulisan artikel ini, versi terakhir JBoss Web Server adalah versi 2.1.0 dan kita akan gunakan versi tersebut dalam LAB ini.
+1.  Buat satu folder konfigurasi pada EAP yang sudah terpasang sebelumnya.
+   
+    Jika anda menggunakan mesin yang sama, create satu direktori baru sebagai lb, kemudian copy direktori `standalone/` ke direktori tersebut.
 
-Download Apache HTTP Server dari JBoss Web Server versi Enterprise dari website [Red Hat](https://access.redhat.com/jbossnetwork/restricted/listSoftware.html?downloadType=distributions&product=webserver&productChanged=yes) sesuai dengan platform yang and a pakai. Untuk LAB ini silakan download file dari link __Red Hat JBoss Web Server 2.1.0 Apache HTTP Server for RHEL 7 x86_64__
-
-Jika tidal memiliki Red Hat support subscription, anda bisa juga download versi community-nya di link berikut:
-
-http://mod-cluster.jboss.org/downloads/1-2-6-Final-bin
-
-Pilih platform yang sesuai
-
-Mod_cluster di Windows
-----------------------
-
-Download mod_cluster untuk windows x86
-
-[mod_cluster-1.2.6.Final-windows-x86.zip](http://downloads.jboss.org/mod_cluster//1.2.6.Final/windows/mod_cluster-1.2.6.Final-windows-x86.zip)
-
-1. Ekstrak file `mod_cluster-1.2.6.Final-windows-x86-ssl.zip` di direktori --misalnya-- `D:/server/httpd-2.2`
-2. Buka command prompt dengan user Administrator (run as Administrator)
-3. Masuk ke direktori tersebut dan jalankan `installconf.bat`
-
+	```sh
+	d:
+	cd /server/jboss/eap/
+	cd server-standalone-ha
+	mkdir lb
+	cp -R jboss-eap-6.4/standalone lb
 	```
-	D:\
-	cd server\httpd-2.2\bin
-    installconf.bat
-	```
-4. Jalankan Web Server dengan perintah `httpd.exe`
-5. Modul mod_cluster secara default sudah terinstal dan terkonfigurasi sebagai modul Apache HTTP server. 
-    Kita sekarang bisa cek JBoss EAP cluster yang sudah terdeteksi oleh  Apache HTTP server dengan mengakses 
-    ke URL berikut:
+
+2.  Edit file `standalone.xml` pada masing-masing direktori server1 dan server2 yaitu di `lb/configuration/`
     
-    [http://localhost:6666/mod_cluster_manager](http://localhost:6666/mod_cluster_manager)
+    Cari konfigurasi __socket-binding-group__ seperti dibawah ini. Lalu ganti IP address yang tertera pada attribute __`modcluster`__. Gunakan alamat multicast yang sama seperti pada konfigurasi aplikasi 224.0.1.105:23364
+    
 
-![Tampilan mod_cluster_manager](https://cloud.githubusercontent.com/assets/3068071/7254245/ff17c642-e86b-11e4-8206-2be8ddcdb2c8.png)
+	```xml
+	<socket-binding-group name="standard-sockets" default-interface="public" port-offset="${jboss.socket.binding.port-offset:0}">
+            ...
+	    <socket-binding name="modcluster" multicast-address="224.0.1.105" multicast-port="23364"/>
+        </socket-binding-group>
+	```
+
+3.  Edit file `standalone.xml` pada masing-masing direktori server1 dan server2 yaitu di `lb/configuration/` 
+    
+    Cari konfigurasi __undertow__ seperti dibawah ini. Lalu ganti IP address yang tertera pada attribute __`proxy-list`__. Karena kita akan menginstal JBoss EAP (Load balancer) pada mesin yang sama (localhost) tadi kita isi kan IP 127.0.0.1 dengan port default yaitu 6666.
+    
+
+	```xml
+	<subsystem xmlns="urn:jboss:domain:undertow:3.1">
+            ...
+            <server name="default-server">
+                ...
+                <host name="default-host" alias="localhost">
+                    ...
+		    <filter-ref name="modcluster"/>
+                </host>
+            </server>
+            ...
+            <filters>
+                ...
+		<mod-cluster name="modcluster" advertise-frequency="0" advertise-socket-binding="modcluster" management-socket-binding="http"/>
+            </filters>
+        </subsystem>
+	```
+
+4.  create file untuk menjalankan server di direktori D:/server/jboss/eap/server-standalone-ha/lb/run.bat
+    
+    ```sh
+    ../../jboss-eap-6.4/bin/standalone.bat -b 0.0.0.0 -c standalone.xml -Djboss.server.base.dir=standalone -Djboss.node.name=lb -Djboss.socket.binding.port-offset=200
+    ```
+    
+    Berikut penjelasan mengenai opsi yang digunakan pada perintah diatas
+ 
+
+	* `-b` : Binding address. 0.0.0.0 artinya port akan di-binding kesemua network interface/IP address yang dimilimi mesin tersebut.
+	* `-Djboss.node.name` : Nama node.
+	* `-Djboss.socket.binding.port-offset` : Default port yang akan digunakan nilainya akan ditambahkan dengan nilai offset ini. Misalnya default port 8080 akan menjadi
+	  8280 (8080+200) jika nilai offset adalah 200
+	  
+5.  Jalankan script run.bat pada folder lb
 
 Test HA cluster
 ---------------
@@ -272,21 +313,21 @@ Kita akan test HA Cluster dengan beberapa scenario:
 3. Test masing-masing aplikasi dengan cara mengakses langsung URL dari JBoss EAP (bukan URL load-balancer)
    Buka browser dan akses kedua URL berikut:
    
+   - [http://localhost:8080/cluster-test](http://localhost:8080/cluster-test)
    - [http://localhost:8180/cluster-test](http://localhost:8180/cluster-test)
-   - [http://localhost:8280/cluster-test](http://localhost:8280/cluster-test)
    
    Lihat tampilan yang muncul di browser, nama dari "nodeId" tiap server yang diakses berbeda yaitu "server1" dan "server2"
    Refresh masing-masing halaman tersebut, dan perhatikan jumlah session ("# of requests placed on session").
    
 4. Test aplikasi dengan cara mengakses URL load-balancer yaitu 
    
-   [http://localhost:6666/cluster-test](http://localhost:6666/cluster-test)
+   [http://localhost:8280/cluster-test](http://localhost:8280/cluster-test)
    
    Perhatikan lagi "nodeId" dan jumlah session.
    
 5. Stop salah satu server, ctrl-c 
    
-   Akses halaman [http://localhost:6666/cluster-test](http://localhost:6666/cluster-test) secara berkali-kali dan 
+   Akses halaman [http://localhost:8280/cluster-test](http://localhost:8280/cluster-test) secara berkali-kali dan 
    perhatikan nama dari "nodeId" untuk melihat efek dari matinya server1.
    
 
