@@ -2,7 +2,7 @@
 
 Pada LAB ini kita akan membuat 4 server JBoss EAP yang akan diset sebagai sebuah **server group** atau kita sebut **cluster**, dan ke-4 server tersebut dapat dikontrol & dimonitor oleh sebuah admin console terpusat yang berada di **Domain Controller**.
 
-Ke-empat server akan saling mereplikasi session data (HTTP session maupun EJB Session), replikasi message pada messaging engine dan akan dikenali oleh JBoss Web Server (dengan modul  **mod_cluster**) sebagai server yang identik. JBoss Web Server akan berlaku sebagai load balancer yang membagi trafik dari pengguna aplikasi ke semua server tersebut.
+Ke-empat server akan saling mereplikasi session data (HTTP session maupun EJB Session), replikasi message pada messaging engine dan akan dikenali oleh JBoss EAP (dengan modul  **mod_cluster**) sebagai server yang identik. JBoss Web Server akan berlaku sebagai load balancer yang membagi trafik dari pengguna aplikasi ke semua server tersebut.
 
 Pada LAB ini kita akan mensimulasikan ke-4 server JBoss EAP tersebut dijalankan di dua mesin terpisah. Jadi masing-masing mesin akan menjalankan 2 server instance JBoss EAP. Sedangkan JBoss Web Server dan JBoss EAP yang berfungsi sebagai Domain Controller disimulasikan berjalan di mesin lain. 
 Total mesin fisik yang kita simulasikan ada 4, tetapi dalam LAB ini kita hanya akan menggunakan satu mesin PC atau laptop saja.
@@ -22,10 +22,10 @@ Berikut gambar arsitektur dari apa yang akan kita setup:
                                   |        | (server2) |      .    +---------------------+
                                   |        +-----------+      .    |      JBoss EAP      |
              +-----------------+  |          machine-2        .....| (Domain Controller) |
- Client  --->| JBoss Web Server|--+                           .    +---------------------+
+ Client  --->| JBoss EAP|--+                           .    +---------------------+
 (browser)    | (loadbalancer)  |  |                           .          machine-1
              +-----------------+  |        +-----------+      .
-                  Mesin-Z         +------->| JBoss EAP |      .
+                  Mesin-4         +------->| JBoss EAP |      .
                                   |        | (server3) |      .
                                   |        |           |.......
                                   |        |           |
@@ -43,10 +43,11 @@ Langkah-langkah besar untuk mensetup lingkungan (environment) seperti tergambar 
   1. Setup Domain Controller di Mesin-X
   2. Setup JBoss EAP di Mesin-A
   3. Setup JBoss EAP di Mesin-B
-  4. Deploy aplikasi ke semua server JBoss EAP di Mesin-A dan Mesin-B lewat Domain Controller
-  5. Test akses aplikasi 
-  6. Setup Load Balancer/Web Server di Mesin-Z
-  7. Test akses applikasi
+  4. Setup JBoss EAP di Mesin-LB
+  5. Deploy aplikasi ke semua server JBoss EAP di Mesin-A dan Mesin-B lewat Domain Controller
+  6. Test akses aplikasi 
+  7. Setup Load Balancer di Mesin-LB
+  8. Test akses applikasi
 
 
 LAB: Menjalankan Domain dengan topology default
@@ -216,8 +217,9 @@ Langkah berikut menggunakan asumsi JBoss EAP anda diinstal di direktori `D:/serv
 2.  Buat direktori `machine-1` di `D:/server/jboss/eap/server-domain`, machine-1 akan digunakan untuk domain controller
 3.  Buat direktori `machine-2` di `D:/server/jboss/eap/server-domain`, machine-2 akan digunakan untuk node server
 4.  Buat direktori `machine-3` di `D:/server/jboss/eap/server-domain`, machine-3 akan digunakan untuk node server
-5.  Copy direktori `D:/server/jboss/eap/jboss-eap-6.4/domain` ke `machine-1`, `machine-2` dan `machine-3`
-6.  Buka file `domain.xml` di direktori `machine-1/domain/configuration/` dengan file editor. Di file ini kita akan melihat ada beberapa konfigurasi subsystem untuk masing-masing **profile** 
+5.  Buat direktori `machine-LB` di `D:/server/jboss/eap/server-domain`, machine-LB akan digunakan untuk node LB
+6.  Copy direktori `D:/server/jboss/eap/jboss-eap-6.4/domain` ke `machine-1`, `machine-2`, `machine-3` dan `machine-LB`
+7.  Buka file `domain.xml` di direktori `machine-1/domain/configuration/` dengan file editor. Di file ini kita akan melihat ada beberapa konfigurasi subsystem untuk masing-masing **profile** 
 
 	```
 	<profiles>
@@ -249,7 +251,7 @@ Langkah berikut menggunakan asumsi JBoss EAP anda diinstal di direktori `D:/serv
 	
 7.  create file untuk menjalankan server di direktori D:/server/jboss/eap/server-domain/machine-1/run.bat 
     ```
-    ../../jboss-eap-6.4/bin/domain.bat -c domain.xml --host-config=host-master.xml -Djboss.domain.base.dir=domain
+    ../../jboss-eap-7.0/bin/domain.bat -c domain.xml --host-config=host-master.xml -Djboss.domain.base.dir=domain
     ```
 
 8.  Jalankan Domain Controller atau master host dengan perintah berikut:
@@ -299,7 +301,7 @@ Langkah berikut menggunakan asumsi JBoss EAP anda diinstal di direktori `D:/serv
 12.  SELESAI. Kita sudah menyiapkan sebuah Domain Controller pada server1.
 
 
-*  Nantinya semua EAP server yang ada di machine-2 dan machine-3 akan mengakses (tergabung ke) Domain Controller di machine-1 ini melalui port 9990 yaitu port yang didefinisikan sebagai __native management port__
+*  Nantinya semua EAP server yang ada di machine-2, machine-3 dan machine-LB akan mengakses (tergabung ke) Domain Controller di machine-1 ini melalui port 9990 yaitu port yang didefinisikan sebagai __native management port__
 
 	```
 	<native-interface security-realm="ManagementRealm">
@@ -313,7 +315,7 @@ Langkah berikut menggunakan asumsi JBoss EAP anda diinstal di direktori `D:/serv
 Kita akan mensimulasikan penyiapan JBoss EAP Server di 2 mesin yaitu machine-2 dan machine-3 yang berbeda dengan mesin dimana dijalankan Domain Controller.
 
 
-1.  Sebelumnya direktori machine-2 dan machine-3 sudah kita buat.
+1.  Sebelumnya direktori machine-2, machine-3 dan machine-lb sudah kita buat.
 2.  Edit file `host-slave.xml` yang ada di direktori `machine-2`
     
     ```
@@ -348,7 +350,7 @@ Kita akan mensimulasikan penyiapan JBoss EAP Server di 2 mesin yaitu machine-2 d
 3.  create file untuk menjalankan server di direktori D:/server/jboss/eap/server-domain/machine-2/run.bat
 
     ```
-    ../../jboss-eap-6.4/bin/domain.bat --host-config=host-slave.xml -Djboss.domain.base.dir=domain -Djboss.domain.master.address=localhost
+    ../../jboss-eap-7.0/bin/domain.bat --host-config=host-slave.xml -Djboss.domain.base.dir=domain -Djboss.domain.master.address=localhost
     ```
     
     >> Pada kondisi nyata dimana Domain Controler atau master-host berbeda mesin dengan mesin anggota cluster maka nilai 127.0.0.1 harus diubah dengan IP address dari master-host.
@@ -359,8 +361,70 @@ Kita akan mensimulasikan penyiapan JBoss EAP Server di 2 mesin yaitu machine-2 d
     run.bat
     ```
 5.  Ulangi langkah 2, 3, 4 untuk machine-3, gunakan port management native 29999.
-6.  Buka web management console via browser http://localhost:9990/ machine-2 dan machine-3 akan terlihat di sana.
+6.  Ulangi langkah 2, 3, 4 untuk machine-LB, gunakan port management native 39999.
+7.  Buka web management console via browser http://localhost:9990/ machine-2, machine-3 dan machine-lb akan terlihat di sana.
    
+## Konfigurasi profile-lb untuk load balancer dan profile app untuk aplikasi
+
+Di sini kita akan membuat profile-lb untuk load balancer node.
+
+1. Buka web management console via browser http://localhost:9990/
+2. Clone profile default, ganti nama menjadi profile-lb
+3. Clone profile ha, ganti nama menjadi profile-app
+4. Matikan seluruh machine-1, machine-2, machine-3 dan machine-lb
+5. Edit file `domain.xml` yang ada di direktori `machine-1`
+    
+   
+    Konfigurasi modul undertow pada profile-app
+   
+    ```xml
+    	    <subsystem xmlns="urn:jboss:domain:undertow:3.1">
+    		...
+                <server name="default-server">
+                    ...
+                    <host name="default-host" alias="localhost">
+                        ...
+                        <filter-ref name="modcluster"/>
+                    </host>
+                </server>
+                ...
+                <filters>
+                    ...
+                    <mod-cluster name="modcluster" advertise-frequency="0" advertise-socket-binding="modcluster" management-socket-binding="http"/>
+                </filters>
+            </subsystem>
+	    ...
+	    <socket-binding-groups>
+        	<socket-binding-group name="standard-sockets" default-interface="public">
+            	    ...
+           	    <socket-binding name="modcluster" multicast-address="224.0.1.105" multicast-port="23364"/>
+          	</socket-binding-group>
+	    <socket-binding-groups>
+    ```
+    
+6. Edit file `domain.xml` yang ada di direktori `machine-1`
+    
+   
+    Konfigurasi modul undertow pada profile-app
+   
+    ```xml
+    	    <subsystem xmlns="urn:jboss:domain:modcluster:2.0">
+                <mod-cluster-config advertise-socket="modcluster" proxies="server-lb" advertise="false" sticky-session="false" connector="ajp">
+                    ...
+                </mod-cluster-config>
+            </subsystem>
+	    ...
+	    <socket-binding-groups>
+        	<socket-binding-group name="ha-sockets" default-interface="public">
+            	    ...
+           	    <outbound-socket-binding name="server-lb">
+                	<remote-destination host="localhost" port="8080"/>
+            	    </outbound-socket-binding>            
+          	</socket-binding-group>
+	    <socket-binding-groups>
+    ```
+    
+    
 
 ## Membuat node server
 
@@ -402,11 +466,12 @@ Di sini kita akan membuat node server via web browser
 7.  Klik cluster-test.war
 8.  Klik assign
 9.  Pilih other-server-group
-10.  cluster-test.war telah terinstall di other-server-group (node-1 & node3)
-11. Test aplikasi dengan mengaksed ke URL berikut
+10. cluster-test.war telah terinstall di other-server-group (node-1 & node3)
+11. Test aplikasi dengan mengakses ke URL berikut
     - node-1 pada port (8080+100) -> [http://localhost:8180/cluster-test](http://localhost:8180/cluster-test)
-    - node-2 pada port (8080+300) -> [http://localhost:8380/cluster-test](http://localhost:8380/cluster-test)
+    - node-2 pada port (8080+200) -> [http://localhost:8280/cluster-test](http://localhost:8280/cluster-test)
+    - node-3 pada port (8080+300) -> [http://localhost:8380/cluster-test](http://localhost:8380/cluster-test)
+    - node-4 pada port (8080+400) -> [http://localhost:8480/cluster-test](http://localhost:8480/cluster-test)
+12. Test load balancer dengan mengakses ke URL berikut
+    - lb pada port (8080+0) -> [http://localhost:8080/cluster-test](http://localhost:8080/cluster-test)
    
-## Menyiapkan Load Balancer (Apache Web Server dengan mod_cluster add-on)
-
-Silakan dicoba sendiri, caranya hampir sama dengan pada saat anda mensetup untuk standalone-ha di LAB sebelumnya :-)
